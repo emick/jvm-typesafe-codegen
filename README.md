@@ -148,7 +148,8 @@ idField.set(order, "ORDER-1");
 ### Alternatives
 
 1. Java: No viable alternative without other annotation processors
-2. Kotlin natively supports: `SomeClass::someField.name`
+2. Lombok `@FieldNameConstants` can generate field name constants.
+3. Kotlin natively supports: `SomeClass::someField.name`
 
 ## @GenerateTransformMapper
 
@@ -244,8 +245,9 @@ ShipmentRecord mapped = new ShipmentRecordMapper(source).mapAll();
 
 ### Alternatives
 
-A reflection-based unit test can be made for this case in such a way that the test fails on unknown fields
-and has known fields categorized to "stays same", "is nulled", etc. categories.
+1. MapStruct provides compile-time generated mappers with explicit field mapping support.
+2. A reflection-based unit test can be made for this case in such a way that the test fails on unknown fields
+   and has known fields categorized to "stays same", "is nulled", etc. categories.
 
 ## Setup
 
