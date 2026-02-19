@@ -1,6 +1,7 @@
 package com.github.mickeer.codegen.util;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 /**
  * Reflection utilities for this library's usage.
@@ -12,7 +13,7 @@ public class FieldGenReflectionUtil {
 
     public static void setFieldValue(Object object, String fieldName, Object value) {
         Field field = getDeclaredField(object, fieldName);
-        doPreservingAccessible(field, () -> {
+        doPreservingAccessible(field, object, () -> {
             field.set(object, value);
             return null;
         });
@@ -20,19 +21,24 @@ public class FieldGenReflectionUtil {
 
     public static Object getFieldValue(Object object, String fieldName) {
         Field field = getDeclaredField(object, fieldName);
-        return doPreservingAccessible(field, () -> field.get(object));
+        return doPreservingAccessible(field, object, () -> field.get(object));
     }
 
-    private static <T> T doPreservingAccessible(Field field, ThrowingSupplier<T> runnable) {
-        boolean accessible = field.isAccessible();
+    private static <T> T doPreservingAccessible(Field field, Object targetObject, ThrowingSupplier<T> runnable) {
+        Object accessTarget = Modifier.isStatic(field.getModifiers()) ? null : targetObject;
+        boolean mustOpen = !field.canAccess(accessTarget);
 
         try {
-            field.setAccessible(true);
+            if (mustOpen) {
+                field.setAccessible(true);
+            }
             return runnable.get();
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         } finally {
-            field.setAccessible(accessible);
+            if (mustOpen) {
+                field.setAccessible(false);
+            }
         }
     }
 
