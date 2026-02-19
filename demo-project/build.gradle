@@ -4,7 +4,7 @@ plugins {
 	id 'idea'
 }
 
-group = 'com.github.mickeer.codegen.demo'
+group = 'com.github.emick.codegen.demo'
 version = '1.0'
 
 java {

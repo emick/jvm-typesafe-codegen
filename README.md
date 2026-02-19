@@ -265,10 +265,10 @@ idea {
 
 dependencies {
   // Depend on the annotations and helper code:
-  implementation 'com.github.mickeer.codegen:foreach-field-gen:1.0'
+  implementation 'com.github.emick.codegen:foreach-field-gen:1.0'
 
   // Apply annotation processor which generates the code:
-  annotationProcessor 'com.github.mickeer.codegen:foreach-field-gen:1.0'
+  annotationProcessor 'com.github.emick.codegen:foreach-field-gen:1.0'
 }
 ```
 
