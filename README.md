@@ -65,12 +65,14 @@ new OrderFieldProcessor(order).visitAll();
 
 ### Real world usage
 
-The main benefit is that a compiler checks that all fields are handled. Thus compilation will break if a field is not handled, e.g. when a field is added or renamed. This can be made to:
+The main benefit is that the compiler checks that all fields/components are handled. Compilation breaks when the model changes and a new field/component is not handled yet.
 
-* Ensure that copy constructor handles all fields
+* Ensure that a copy constructor handles all fields
+* Ensure that soft-delete also marks child entities as soft-deleted
 * Separate serialization logic to another class
 * Separate validation logic to another class
-* Ensure that soft-delete also marks child entities as soft-deleted
+* PII redaction before logging, where each sensitive field must be explicitly handled.
+* Audit trail generation where every field/component must be classified.
 
 ### Alternatives
 
@@ -103,6 +105,12 @@ Generates enum values and a field-name getter:
 assertEquals("productName", OrderLineFields.PRODUCT_NAME.getFieldName());
 ```
 
+### Real world usage
+
+* UI table column configuration (show/hide/sort) with exhaustive `switch` over generated enum constants.
+* API sort/filter allowlists where new fields/components must be explicitly approved.
+* Export mapping (CSV/JSON) where each field/component gets a required mapping rule.
+
 ## @GenerateFieldNames
 
 Generates an interface containing all field/component names of the annotated type as constant String fields.
@@ -133,7 +141,9 @@ idField.set(order, "ORDER-1");
 
 ### Real world usage
 
-* Compiler-checked field references when using reflection
+* Reflection-based patch/update handling without string literals.
+* Dynamic query or filter builders with compiler-safe field/component names.
+* Field-level authorization maps keyed by generated constants.
 
 ### Alternatives
 
@@ -228,9 +238,9 @@ ShipmentRecord mapped = new ShipmentRecordMapper(source).mapAll();
 
 ### Real world usage
 
-When a customer returns a shipment, a return shipment may be created from the original shipment
-with some fields staying same, some emptied and some set to a default value. This mapper
-allows a compiler-safe way to handle added or changed fields in this kind of mapping.
+* Return shipment creation, where sender/receiver are swapped and status is reset.
+* DTO-to-entity update flows with per-field normalization/conversion rules.
+* Model version migration (`v1 -> v2`) where added/renamed fields/components break compilation until mapped.
 
 ### Alternatives
 
