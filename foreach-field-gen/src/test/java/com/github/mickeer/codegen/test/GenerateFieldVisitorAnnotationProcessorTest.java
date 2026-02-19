@@ -3,7 +3,6 @@ package com.github.mickeer.codegen.test;
 import com.github.mickeer.codegen.fieldvisitor.GenerateFieldVisitor;
 import com.github.mickeer.codegen.fieldvisitor.GenerateFieldVisitorAnnotationProcessor;
 import com.github.mickeer.codegen.util.FieldGenReflectionUtil;
-import com.google.common.base.Joiner;
 import com.google.common.truth.Truth;
 import com.google.testing.compile.JavaFileObjects;
 import com.google.testing.compile.JavaSourcesSubjectFactory;
@@ -14,48 +13,54 @@ import java.util.List;
 
 public class GenerateFieldVisitorAnnotationProcessorTest {
 
-    private static final String NEW_LINE = System.lineSeparator();
     private static final String REFLECTION_UTIL = FieldGenReflectionUtil.class.getCanonicalName();
 
     @Test
     public void shouldProcess() {
-        JavaFileObject input = JavaFileObjects.forSourceString("com.example.A",
-                Joiner.on(NEW_LINE).join(
-                        "package com.example;",
-                        "",
-                        "import " + GenerateFieldVisitor.class.getCanonicalName() + ";",
-                        "import java.util.ArrayDeque;",
-                        "",
-                        "@" + GenerateFieldVisitor.class.getSimpleName(),
-                        "public class A {",
-                        "    String myField;",
-                        "    ArrayDeque<String> myField2;",
-                        "}"));
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
 
-        JavaFileObject output = JavaFileObjects.forSourceString("com.example.AFieldVisitor",
-                Joiner.on(NEW_LINE).join(
-                        "package com.example;",
-                        "",
-                        "import java.lang.String;",
-                        "import java.util.ArrayDeque;",
-                        "",
-                        "public abstract class AFieldVisitor {",
-                        "",
-                        "  private A instance;",
-                        "",
-                        "  AFieldVisitor(A instance) {",
-                        "    this.instance = instance;",
-                        "  }",
-                        "",
-                        "  protected abstract void visitMyField(String value);",
-                        "  protected abstract void visitMyField2(ArrayDeque<String> value);",
-                        "",
-                        "  public void visitAll() {",
-                        "    visitMyField((String)" + REFLECTION_UTIL + ".getFieldValue(instance, \"myField\"));",
-                        "    visitMyField2((ArrayDeque<String>)" + REFLECTION_UTIL + ".getFieldValue(instance, \"myField2\"));",
-                        "  }",
-                        "}"
-                ));
+                import %s;
+                import java.util.ArrayDeque;
+
+                @%s
+                public class A {
+                    String myField;
+                    ArrayDeque<String> myField2;
+                }
+                """.formatted(
+                        GenerateFieldVisitor.class.getCanonicalName(),
+                        GenerateFieldVisitor.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.AFieldVisitor",
+                """
+                package com.example;
+
+                import java.lang.String;
+                import java.util.ArrayDeque;
+
+                public abstract class AFieldVisitor {
+
+                  private A instance;
+
+                  AFieldVisitor(A instance) {
+                    this.instance = instance;
+                  }
+
+                  protected abstract void visitMyField(String value);
+                  protected abstract void visitMyField2(ArrayDeque<String> value);
+
+                  public void visitAll() {
+                    visitMyField((String)%s.getFieldValue(instance, "myField"));
+                    visitMyField2((ArrayDeque<String>)%s.getFieldValue(instance, "myField2"));
+                  }
+                }
+                """.formatted(REFLECTION_UTIL, REFLECTION_UTIL)
+        );
 
         Truth.assert_()
                 .about(JavaSourcesSubjectFactory.javaSources())

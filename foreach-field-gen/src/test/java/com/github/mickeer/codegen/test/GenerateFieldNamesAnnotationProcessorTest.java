@@ -2,7 +2,6 @@ package com.github.mickeer.codegen.test;
 
 import com.github.mickeer.codegen.fieldnames.GenerateFieldNames;
 import com.github.mickeer.codegen.fieldnames.GenerateFieldNamesAnnotationProcessor;
-import com.google.common.base.Joiner;
 import com.google.common.truth.Truth;
 import com.google.testing.compile.JavaFileObjects;
 import com.google.testing.compile.JavaSourcesSubjectFactory;
@@ -13,30 +12,36 @@ import java.util.List;
 
 public class GenerateFieldNamesAnnotationProcessorTest {
 
-    private static final String NEW_LINE = System.lineSeparator();
-
     @Test
     public void shouldProcess() {
-        JavaFileObject input = JavaFileObjects.forSourceString("com.example.A",
-                Joiner.on(NEW_LINE).join(
-                        "package com.example;",
-                        "",
-                        "import " + GenerateFieldNames.class.getCanonicalName() + ";",
-                        "",
-                        "@" + GenerateFieldNames.class.getSimpleName(),
-                        "public class A {",
-                        "    String myField;",
-                        "}"));
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
 
-        JavaFileObject output = JavaFileObjects.forSourceString("com.example.AFields",
-                Joiner.on(NEW_LINE).join(
-                        "package com.example;",
-                        "",
-                        "import java.lang.String;",
-                        "",
-                        "public interface AFields {",
-                        "  String myField = \"myField\";",
-                        "}"));
+                import %s;
+
+                @%s
+                public class A {
+                    String myField;
+                }
+                """.formatted(
+                        GenerateFieldNames.class.getCanonicalName(),
+                        GenerateFieldNames.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.AFields",
+                """
+                package com.example;
+
+                import java.lang.String;
+
+                public interface AFields {
+                  String myField = "myField";
+                }
+                """
+        );
 
         Truth.assert_()
                 .about(JavaSourcesSubjectFactory.javaSources())
