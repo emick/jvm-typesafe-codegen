@@ -16,7 +16,7 @@ is necessary. The generation should work for all JVM languages (Java, Groovy, Ko
 
 ## @GenerateFieldVisitor
 
-Generates a visitor class for type-safe processing of each field in the annotated class.
+Generates a visitor class for type-safe processing of each field/component in the annotated type.
 
 ### Options
 
@@ -78,7 +78,7 @@ The main benefit is that a compiler checks that all fields are handled. Thus com
 
 ## @GenerateFieldEnum
 
-Generates an enum containing all fields of the annotated class as enum values. The enum values have `getFieldName()` getter returning the field name.
+Generates an enum containing all fields/components of the annotated type as enum values. The enum values have `getFieldName()` getter returning the original field/component name.
 
 ### Options
 
@@ -105,7 +105,7 @@ assertEquals("productName", OrderLineFields.PRODUCT_NAME.getFieldName());
 
 ## @GenerateFieldNames
 
-Generates an interface containing all field names of the annotated class as constant String fields.
+Generates an interface containing all field/component names of the annotated type as constant String fields.
 
 ### Options
 
@@ -142,7 +142,7 @@ idField.set(order, "ORDER-1");
 
 ## @GenerateTransformMapper
 
-Generates a mapper transforming an instance of a class to a new instance of the same class.
+Generates a mapper for type-safe field-by-field transformation.
 
 ### Options
 

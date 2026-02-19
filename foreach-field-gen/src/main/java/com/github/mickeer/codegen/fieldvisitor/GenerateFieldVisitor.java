@@ -8,9 +8,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * For each class annotated with this annotation, an abstract class with name
+ * For each class or record annotated with this annotation, an abstract class with name
  * postfixed with "FieldVisitor" is generated. The generated class contains
- * an abstract method per field of the annotated class.
+ * an abstract method per field/component of the annotated type.
  *
  * <p> E.g. for a class {@code MyClass} with a field {@code date}, a class
  * {@code MyClassFieldVisitor} is generated. The generated class contains

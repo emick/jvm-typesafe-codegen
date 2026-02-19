@@ -8,9 +8,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * For each class annotated with this annotation, an enum class with class' name
- * postfixed with "Fields" is generated. The enum class contains an enum value
- * for each of the fields of the annotated class.
+ * For each class or record annotated with this annotation, an enum with type name
+ * postfixed with "Fields" is generated. The enum contains one value for each
+ * field/component of the annotated type.
  *
  * <p> E.g. for class {@code MyClass} with a field {@code date}, an enum class
  * {@code MyClassFields} is generated with enum value {@code DATE}.
