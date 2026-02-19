@@ -68,7 +68,7 @@ Generates an enum containing all fields of the annotated class as enum values. T
 
 ## @GenerateFieldNames
 
-Generates a class containing all field names of the annotated class as constant String fields.
+Generates an interface containing all field names of the annotated class as constant String fields.
 
 ### Real world usage
 
