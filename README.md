@@ -64,7 +64,7 @@ The main benefit is that a compiler checks that all fields are handled. Thus com
 
 ## @GenerateFieldEnum
 
-Generates an enum containing all fields of the annotated class as enum values. The enum values have a getter to return the field name as String.
+Generates an enum containing all fields of the annotated class as enum values. The enum values have `getFieldName()` getter returning the field name.
 
 ## @GenerateFieldNames
 

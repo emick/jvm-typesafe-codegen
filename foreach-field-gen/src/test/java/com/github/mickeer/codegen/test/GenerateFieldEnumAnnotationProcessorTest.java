@@ -32,8 +32,20 @@ public class GenerateFieldEnumAnnotationProcessorTest {
                 Joiner.on(NEW_LINE).join(
                         "package com.example;",
                         "",
+                        "import java.lang.String;",
+                        "",
                         "public enum AFields {",
-                        "  MY_FIELD",
+                        "  MY_FIELD(\"myField\");",
+                        "",
+                        "  private final String fieldName;",
+                        "",
+                        "  AFields(String fieldName) {",
+                        "    this.fieldName = fieldName;",
+                        "  }",
+                        "",
+                        "  public String getFieldName() {",
+                        "    return fieldName;",
+                        "  }",
                         "}"));
 
         Truth.assert_()

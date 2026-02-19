@@ -33,7 +33,6 @@ idea {
 dependencies {
 	implementation project(":foreach-field-gen")
 
-	// Use project dependency so the demo builds from a fresh checkout
 	annotationProcessor project(":foreach-field-gen")
 
 	testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'

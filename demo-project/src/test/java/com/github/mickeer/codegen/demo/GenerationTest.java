@@ -40,6 +40,7 @@ public class GenerationTest {
         assertEquals(1, OrderLineFields.values().length);
         assertEquals(OrderLineFields.PRODUCT_NAME, OrderLineFields.valueOf("PRODUCT_NAME"));
         assertEquals("PRODUCT_NAME", OrderLineFields.PRODUCT_NAME.name());
+        assertEquals("productName", OrderLineFields.PRODUCT_NAME.getFieldName());
     }
 
 
