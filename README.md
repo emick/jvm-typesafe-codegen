@@ -7,9 +7,23 @@ action to handle the changed field. This is similar to IDE errors from missing c
 The additional code is generated at compile-time using annotation processing. After initial config, no manual compilation
 is necessary. The generation should work for all JVM languages (Java, Groovy, Kotlin etc.)
 
+## Annotation Summary
+
+* [`@GenerateFieldVisitor`](#generatefieldvisitor): generates an abstract visitor for type-safe processing of all fields/components.
+* [`@GenerateFieldEnum`](#generatefieldenum): generates an enum containing all field/component names with `getFieldName()`.
+* [`@GenerateFieldNames`](#generatefieldnames): generates an interface with string constants for all field/component names.
+* [`@GenerateTransformMapper`](#generatetransformmapper): generates an abstract mapper for field-by-field transformation.
+
 ## @GenerateFieldVisitor
 
-Generates a visitor class for type-safe processing of each field in the annotated class. 
+Generates a visitor class for type-safe processing of each field in the annotated class.
+
+### Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `generatedName` | `String` | `""` | Custom name of the generated type. Empty value uses default `<TypeName>FieldVisitor`. |
+| `visibility` | `GeneratedVisibility` | `PUBLIC` | Visibility of the generated type. |
 
 ### Usage
 
@@ -23,7 +37,7 @@ public class Order {
 }
 ```
 
-generates an `OrderFieldVisitor` parent class which can be extended to customize the processing
+Generates an `OrderFieldVisitor` abstract base class that can be extended to customize processing.
 
 ```java
 public class OrderFieldProcessor extends OrderFieldVisitor {
@@ -43,7 +57,7 @@ public class OrderFieldProcessor extends OrderFieldVisitor {
 }
 ```
 
-and can then be used to process all fields of an instance:
+It can then be used to process all fields of an instance:
 
 ```java
 new OrderFieldProcessor(order).visitAll();
@@ -53,18 +67,25 @@ new OrderFieldProcessor(order).visitAll();
 
 The main benefit is that a compiler checks that all fields are handled. Thus compilation will break if a field is not handled, e.g. when a field is added or renamed. This can be made to:
 
-  * Ensure that copy constructor handles all fields
-  * Separate serialization logic to another class
-  * Separate validation logic to another class
-  * Ensure that soft-delete also marks child entities as soft-deleted
+* Ensure that copy constructor handles all fields
+* Separate serialization logic to another class
+* Separate validation logic to another class
+* Ensure that soft-delete also marks child entities as soft-deleted
 
 ### Alternatives
 
-  * (Partial:) IntelliJ IDEA checks that copy constructor handles all fields
+* (Partial) IntelliJ IDEA checks that copy constructor handles all fields
 
 ## @GenerateFieldEnum
 
 Generates an enum containing all fields of the annotated class as enum values. The enum values have `getFieldName()` getter returning the field name.
+
+### Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `generatedName` | `String` | `""` | Custom name of the generated type. Empty value uses default `<TypeName>Fields`. |
+| `visibility` | `GeneratedVisibility` | `PUBLIC` | Visibility of the generated type. |
 
 ### Usage
 
@@ -86,6 +107,13 @@ assertEquals("productName", OrderLineFields.PRODUCT_NAME.getFieldName());
 
 Generates an interface containing all field names of the annotated class as constant String fields.
 
+### Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `generatedName` | `String` | `""` | Custom name of the generated type. Empty value uses default `<TypeName>Fields`. |
+| `visibility` | `GeneratedVisibility` | `PUBLIC` | Visibility of the generated type. |
+
 ### Usage
 
 ```java
@@ -105,16 +133,28 @@ idField.set(order, "ORDER-1");
 
 ### Real world usage
 
-  * Compiler-checked field references when using reflection
+* Compiler-checked field references when using reflection
 
 ### Alternatives
 
-1) Java: No viable alternative without other annotation processors
-2) Kotlin natively supports: `SomeClass::someField.name`
+1. Java: No viable alternative without other annotation processors
+2. Kotlin natively supports: `SomeClass::someField.name`
 
 ## @GenerateTransformMapper
 
 Generates a mapper transforming an instance of a class to a new instance of the same class.
+
+### Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `generatedName` | `String` | `""` | Custom name of the generated type. Empty value uses default `<TypeName>FieldMapper`. |
+| `visibility` | `GeneratedVisibility` | `PUBLIC` | Visibility of the generated type. |
+
+### Behavior
+
+* For classes, generated `mapAllTo(target)` maps values into the provided target instance.
+* For records, generated `mapAll()` creates and returns a new record instance.
 
 ### Usage
 
@@ -188,7 +228,7 @@ ShipmentRecord mapped = new ShipmentRecordMapper(source).mapAll();
 
 ### Real world usage
 
-When a customer returns a shipment, a return shipment may be created from the original shipment 
+When a customer returns a shipment, a return shipment may be created from the original shipment
 with some fields staying same, some emptied and some set to a default value. This mapper
 allows a compiler-safe way to handle added or changed fields in this kind of mapping.
 
@@ -197,15 +237,14 @@ allows a compiler-safe way to handle added or changed fields in this kind of map
 A reflection-based unit test can be made for this case in such a way that the test fails on unknown fields
 and has known fields categorized to "stays same", "is nulled", etc. categories.
 
-Usage
------
+## Setup
 
 For usage in another Gradle project, this library is not yet published to a public repository. First, publish it to Maven local:
 
 1. Clone this repository to your local machine
 2. Run `./gradlew clean publishToMavenLocal` to publish the project to Maven local repository
 
-### Usage in a Gradle project 
+### Usage in a Gradle project
 
 ```groovy
 // Import the library from maven local:
@@ -233,21 +272,18 @@ dependencies {
 }
 ```
 
-Possible future improvements
-============================
+## Possible Future Improvements
 
-  * FieldVisitor annotation could have options to generate `fieldName` and `fieldType` parameters in visitor methods
-  * Investigate GraalVM native build support
-  
-Limitations
-===========
+* FieldVisitor annotation could have options to generate `fieldName` and `fieldType` parameters in visitor methods
+* Investigate GraalVM native build support
 
-  * Java 21+ is required
-  * Only type members are supported. Inheritance hierarchy traversal is not supported.
-  * GraalVM native build is not tested and most likely not supported for all annotations due to the usage of reflection
-  
-Links
-=====
+## Limitations
 
-  * https://github.com/ryandens/auto-delegate - generate base class for proxy/decorator pattern to avoid unnecessary super-calling methods
-  * https://github.com/cmelchior/realmfieldnameshelper - Realm extension to create type-safe field references 
+* Java 21+ is required
+* Only type members are supported. Inheritance hierarchy traversal is not supported.
+* GraalVM native build is not tested and most likely not supported for all annotations due to the usage of reflection
+
+## Links
+
+* https://github.com/ryandens/auto-delegate - generate base class for proxy/decorator pattern to avoid unnecessary super-calling methods
+* https://github.com/cmelchior/realmfieldnameshelper - Realm extension to create type-safe field references
