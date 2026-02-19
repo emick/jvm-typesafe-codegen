@@ -7,5 +7,7 @@ import com.github.mickeer.codegen.transform.GenerateTransformMapper;
 @GenerateTransformMapper
 public class Shipment {
     String id;
-    int quantity;
+    String sender;
+    String receiver;
+    ShipmentState status;
 }

@@ -66,9 +66,42 @@ The main benefit is that a compiler checks that all fields are handled. Thus com
 
 Generates an enum containing all fields of the annotated class as enum values. The enum values have `getFieldName()` getter returning the field name.
 
+### Usage
+
+```java
+@GenerateFieldEnum
+public class OrderLine {
+    String productName;
+    int quantity;
+}
+```
+
+Generates enum values and a field-name getter:
+
+```java
+assertEquals("productName", OrderLineFields.PRODUCT_NAME.getFieldName());
+```
+
 ## @GenerateFieldNames
 
 Generates an interface containing all field names of the annotated class as constant String fields.
+
+### Usage
+
+```java
+@GenerateFieldNames
+public class Order {
+    String id;
+}
+```
+
+Generated constants can be used for reflection safely:
+
+```java
+Field idField = Order.class.getDeclaredField(OrderFields.id);
+idField.setAccessible(true);
+idField.set(order, "ORDER-1");
+```
 
 ### Real world usage
 
@@ -83,16 +116,85 @@ Generates an interface containing all field names of the annotated class as cons
 
 Generates a mapper transforming an instance of a class to a new instance of the same class.
 
+### Usage
+
+For classes:
+
+```java
+@GenerateTransformMapper
+public class Shipment {
+    String id;
+    String sender;
+    String receiver;
+    ShipmentState status;
+}
+
+public class ReturnShipmentMapper extends ShipmentFieldMapper {
+    public ReturnShipmentMapper(Shipment source) {
+        super(source);
+    }
+
+    @Override
+    protected void setId(Shipment source, String sourceFieldValue, Consumer<String> setter) {
+        setter.accept(sourceFieldValue);
+    }
+
+    @Override
+    protected void setSender(Shipment source, String sourceFieldValue, Consumer<String> setter) {
+        setter.accept(source.receiver);
+    }
+
+    @Override
+    protected void setReceiver(Shipment source, String sourceFieldValue, Consumer<String> setter) {
+        setter.accept(source.sender);
+    }
+
+    @Override
+    protected void setStatus(Shipment source, ShipmentState sourceFieldValue, Consumer<ShipmentState> setter) {
+        setter.accept(ShipmentState.AT_ORIGIN);
+    }
+}
+
+// Usage
+new ReturnShipmentMapper(source).mapAllTo(target);
+```
+
+For records:
+
+```java
+@GenerateTransformMapper
+public record ShipmentRecord(String id, int quantity) {
+}
+
+public class ShipmentRecordMapper extends ShipmentRecordFieldMapper {
+    public ShipmentRecordMapper(ShipmentRecord source) {
+        super(source);
+    }
+
+    @Override
+    protected String mapId(ShipmentRecord source, String sourceFieldValue) {
+        return sourceFieldValue + "-mapped";
+    }
+
+    @Override
+    protected int mapQuantity(ShipmentRecord source, int sourceFieldValue) {
+        return sourceFieldValue + 1;
+    }
+}
+
+ShipmentRecord mapped = new ShipmentRecordMapper(source).mapAll();
+```
+
 ### Real world usage
 
 When a customer returns a shipment, a return shipment may be created from the original shipment 
 with some fields staying same, some emptied and some set to a default value. This mapper
-allows a compiler-safe way to handle added or changed fields in this kind of mappings.
+allows a compiler-safe way to handle added or changed fields in this kind of mapping.
 
 ### Alternatives
 
-A reflection based unit test can be made for this case in such way that the test fails on unknown fields
-and has known fields categorized to "stays same", "is nulled" etc. categories.
+A reflection-based unit test can be made for this case in such a way that the test fails on unknown fields
+and has known fields categorized to "stays same", "is nulled", etc. categories.
 
 Usage
 -----
@@ -131,11 +233,6 @@ dependencies {
   annotationProcessor 'com.github.mickeer.codegen:foreach-field-gen:1.0'
 }
 ```
-
-TODO
-----
-
-* Add more examples and documentation
 
 Possible future improvements
 ============================
