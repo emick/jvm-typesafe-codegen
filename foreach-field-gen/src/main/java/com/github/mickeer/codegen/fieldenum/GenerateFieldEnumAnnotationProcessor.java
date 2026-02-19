@@ -10,7 +10,6 @@ import com.squareup.javapoet.TypeSpec;
 import javax.annotation.processing.Processor;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
 import java.util.List;
 
 /**
@@ -25,11 +24,14 @@ public class GenerateFieldEnumAnnotationProcessor extends AbstractFieldProcessor
 
     @Override
     protected TypeSpec.Builder process(Element element, List<Element> sourceFields) {
-        TypeSpec.Builder fieldsEnumBuilder = TypeSpec.enumBuilder(element.getSimpleName() + "Fields")
-                .addModifiers(Modifier.PUBLIC);
+        String generatedTypeName = getGeneratedTypeName(element, element.getSimpleName() + "Fields");
+        TypeSpec.Builder fieldsEnumBuilder = TypeSpec.enumBuilder(generatedTypeName);
+        if (isPublicGeneratedType(element)) {
+            fieldsEnumBuilder.addModifiers(Modifier.PUBLIC);
+        }
 
         sourceFields.forEach(f -> fieldsEnumBuilder.addEnumConstant(
-                SourceUtil.fieldNameToEnumName(asName(getMemberName(f))),
+                SourceUtil.fieldNameToEnumName(f.getSimpleName()),
                 TypeSpec.anonymousClassBuilder("$S", getMemberName(f)).build()
         ));
 
@@ -46,34 +48,4 @@ public class GenerateFieldEnumAnnotationProcessor extends AbstractFieldProcessor
 
         return fieldsEnumBuilder;
     }
-
-    private static Name asName(String value) {
-        return new Name() {
-            @Override
-            public boolean contentEquals(CharSequence cs) {
-                return value.contentEquals(cs);
-            }
-
-            @Override
-            public int length() {
-                return value.length();
-            }
-
-            @Override
-            public char charAt(int index) {
-                return value.charAt(index);
-            }
-
-            @Override
-            public CharSequence subSequence(int start, int end) {
-                return value.subSequence(start, end);
-            }
-
-            @Override
-            public String toString() {
-                return value;
-            }
-        };
-    }
-
 }

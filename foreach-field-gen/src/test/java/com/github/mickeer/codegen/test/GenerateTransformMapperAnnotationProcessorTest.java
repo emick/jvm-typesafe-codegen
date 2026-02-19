@@ -1,5 +1,6 @@
 package com.github.mickeer.codegen.test;
 
+import com.github.mickeer.codegen.common.GeneratedVisibility;
 import com.github.mickeer.codegen.transform.GenerateTransformMapper;
 import com.github.mickeer.codegen.transform.GenerateTransformMapperAnnotationProcessor;
 import com.github.mickeer.codegen.util.FieldGenReflectionUtil;
@@ -110,6 +111,59 @@ public class GenerateTransformMapperAnnotationProcessorTest {
                   }
                 }
                 """
+        );
+
+        Truth.assert_()
+                .about(JavaSourcesSubjectFactory.javaSources())
+                .that(List.of(input))
+                .processedWith(new GenerateTransformMapperAnnotationProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(output);
+    }
+
+    @Test
+    public void shouldProcessWithCustomGeneratedNameAndPackagePrivateVisibility() {
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
+
+                import %s;
+                import %s;
+
+                @%s(generatedName = "CustomMapper", visibility = GeneratedVisibility.PACKAGE_PRIVATE)
+                public class A {
+                    String myField;
+                }
+                """.formatted(
+                        GenerateTransformMapper.class.getCanonicalName(),
+                        GeneratedVisibility.class.getCanonicalName(),
+                        GenerateTransformMapper.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.CustomMapper",
+                """
+                package com.example;
+
+                import java.lang.String;
+                import java.util.function.Consumer;
+
+                abstract class CustomMapper {
+                  private A source;
+
+                  CustomMapper(A source) {
+                    this.source = source;
+                  }
+
+                  protected abstract void setMyField(A source, String sourceFieldValue, Consumer<String> setter);
+
+                  public void mapAllTo(A target) {
+                    setMyField(source, (String)%s.getFieldValue(source, "myField"), value -> %s.setFieldValue(target, "myField", value));
+                  }
+                }
+                """.formatted(REFLECTION_UTIL, REFLECTION_UTIL)
         );
 
         Truth.assert_()

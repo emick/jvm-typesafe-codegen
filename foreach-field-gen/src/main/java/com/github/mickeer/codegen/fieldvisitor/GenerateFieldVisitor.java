@@ -1,5 +1,12 @@
 package com.github.mickeer.codegen.fieldvisitor;
 
+import com.github.mickeer.codegen.common.GeneratedVisibility;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * For each class annotated with this annotation, an abstract class with name
  * postfixed with "FieldVisitor" is generated. The generated class contains
@@ -17,5 +24,9 @@ package com.github.mickeer.codegen.fieldvisitor;
  * such as adding, renaming or removing fields will trigger compilation errors,
  * signalling the developer to fix those.
  */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.SOURCE)
 public @interface GenerateFieldVisitor {
+    String generatedName() default "";
+    GeneratedVisibility visibility() default GeneratedVisibility.PUBLIC;
 }

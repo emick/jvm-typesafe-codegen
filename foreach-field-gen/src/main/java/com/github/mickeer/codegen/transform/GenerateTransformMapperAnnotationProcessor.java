@@ -30,8 +30,12 @@ public class GenerateTransformMapperAnnotationProcessor extends AbstractFieldPro
 
     @Override
     protected TypeSpec.Builder process(Element element, List<Element> sourceFields) {
-        TypeSpec.Builder mapperBuilder = TypeSpec.classBuilder(element.getSimpleName() + "FieldMapper")
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+        String generatedTypeName = getGeneratedTypeName(element, element.getSimpleName() + "FieldMapper");
+        TypeSpec.Builder mapperBuilder = TypeSpec.classBuilder(generatedTypeName)
+                .addModifiers(Modifier.ABSTRACT);
+        if (isPublicGeneratedType(element)) {
+            mapperBuilder.addModifiers(Modifier.PUBLIC);
+        }
 
         var elementType = TypeName.get(element.asType());
 

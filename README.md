@@ -237,8 +237,6 @@ dependencies {
 Possible future improvements
 ============================
 
-  * Configurable name and postfix of generated classes
-  * Configurable visibility of generated classes
   * FieldVisitor annotation could have options to generate `fieldName` and `fieldType` parameters in visitor methods
   * Investigate GraalVM native build support
   

@@ -6,15 +6,20 @@ import com.squareup.javapoet.TypeSpec;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,6 +27,9 @@ import java.util.stream.Collectors;
  * Abstract processor for generating a type (class or enum) from class and its fields.
  */
 public abstract class AbstractFieldProcessor extends AbstractProcessor {
+
+    private static final String GENERATED_NAME_PROPERTY = "generatedName";
+    private static final String VISIBILITY_PROPERTY = "visibility";
 
     private final Class<? extends Annotation> annotationClass;
 
@@ -81,8 +89,38 @@ public abstract class AbstractFieldProcessor extends AbstractProcessor {
         return nameSet.size() != sourceFields.size();
     }
 
-    private void error(Element element, String s) {
+    protected void error(Element element, String s) {
         processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, s, element);
+    }
+
+    protected String getGeneratedTypeName(Element element, String defaultName) {
+        AnnotationValue annotationValue = getAnnotationValue(element, GENERATED_NAME_PROPERTY);
+        String generatedName = annotationValue == null ? defaultName : annotationValue.getValue().toString();
+
+        if (generatedName.isBlank()) {
+            return defaultName;
+        }
+
+        if (!isValidGeneratedTypeName(generatedName)) {
+            error(element, "\"" + GENERATED_NAME_PROPERTY + "\" must be a valid simple Java identifier");
+            return defaultName;
+        }
+
+        return generatedName;
+    }
+
+    protected boolean isPublicGeneratedType(Element element) {
+        AnnotationValue annotationValue = getAnnotationValue(element, VISIBILITY_PROPERTY);
+        if (annotationValue == null) {
+            return true;
+        }
+
+        Object visibilityValue = annotationValue.getValue();
+        if (visibilityValue instanceof VariableElement variableElement) {
+            return variableElement.getSimpleName().contentEquals(GeneratedVisibility.PUBLIC.name());
+        }
+
+        return true;
     }
 
     protected static String capitalize(String string) {
@@ -100,6 +138,57 @@ public abstract class AbstractFieldProcessor extends AbstractProcessor {
     protected static boolean isRecordMember(Element element) {
         Element enclosing = element.getEnclosingElement();
         return enclosing != null && enclosing.getKind() == ElementKind.RECORD;
+    }
+
+    private AnnotationValue getAnnotationValue(Element element, String propertyName) {
+        AnnotationMirror annotationMirror = getAnnotationMirror(element);
+        if (annotationMirror == null) {
+            return null;
+        }
+
+        Map<? extends ExecutableElement, ? extends AnnotationValue> values =
+                processingEnv.getElementUtils().getElementValuesWithDefaults(annotationMirror);
+
+        return values.entrySet().stream()
+                .filter(entry -> entry.getKey().getSimpleName().contentEquals(propertyName))
+                .map(Map.Entry::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private AnnotationMirror getAnnotationMirror(Element element) {
+        return element.getAnnotationMirrors().stream()
+                .filter(mirror -> {
+                    Element annotationElement = mirror.getAnnotationType().asElement();
+                    if (!(annotationElement instanceof TypeElement typeElement)) {
+                        return false;
+                    }
+                    return typeElement.getQualifiedName().contentEquals(annotationClass.getCanonicalName());
+                })
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static boolean isValidGeneratedTypeName(String generatedName) {
+        if (generatedName == null) {
+            return false;
+        }
+
+        if (generatedName.indexOf('.') >= 0) {
+            return false;
+        }
+
+        if (!Character.isJavaIdentifierStart(generatedName.charAt(0))) {
+            return false;
+        }
+
+        for (int i = 1; i < generatedName.length(); i++) {
+            if (!Character.isJavaIdentifierPart(generatedName.charAt(i))) {
+                return false;
+            }
+        }
+
+        return !SourceVersion.isKeyword(generatedName);
     }
 
     private static boolean isSupportedSourceKind(ElementKind kind) {

@@ -1,5 +1,6 @@
 package com.github.mickeer.codegen.test;
 
+import com.github.mickeer.codegen.common.GeneratedVisibility;
 import com.github.mickeer.codegen.fieldvisitor.GenerateFieldVisitor;
 import com.github.mickeer.codegen.fieldvisitor.GenerateFieldVisitorAnnotationProcessor;
 import com.github.mickeer.codegen.util.FieldGenReflectionUtil;
@@ -112,6 +113,59 @@ public class GenerateFieldVisitorAnnotationProcessorTest {
                   }
                 }
                 """
+        );
+
+        Truth.assert_()
+                .about(JavaSourcesSubjectFactory.javaSources())
+                .that(List.of(input))
+                .processedWith(new GenerateFieldVisitorAnnotationProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(output);
+    }
+
+    @Test
+    public void shouldProcessWithCustomGeneratedNameAndPackagePrivateVisibility() {
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
+
+                import %s;
+                import %s;
+
+                @%s(generatedName = "CustomVisitor", visibility = GeneratedVisibility.PACKAGE_PRIVATE)
+                public class A {
+                    String myField;
+                }
+                """.formatted(
+                        GenerateFieldVisitor.class.getCanonicalName(),
+                        GeneratedVisibility.class.getCanonicalName(),
+                        GenerateFieldVisitor.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.CustomVisitor",
+                """
+                package com.example;
+
+                import java.lang.String;
+
+                abstract class CustomVisitor {
+
+                  private A instance;
+
+                  CustomVisitor(A instance) {
+                    this.instance = instance;
+                  }
+
+                  protected abstract void visitMyField(String value);
+
+                  public void visitAll() {
+                    visitMyField((String)%s.getFieldValue(instance, "myField"));
+                  }
+                }
+                """.formatted(REFLECTION_UTIL)
         );
 
         Truth.assert_()

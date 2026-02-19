@@ -1,5 +1,6 @@
 package com.github.mickeer.codegen.test;
 
+import com.github.mickeer.codegen.common.GeneratedVisibility;
 import com.github.mickeer.codegen.fieldnames.GenerateFieldNames;
 import com.github.mickeer.codegen.fieldnames.GenerateFieldNamesAnnotationProcessor;
 import com.google.common.truth.Truth;
@@ -80,6 +81,48 @@ public class GenerateFieldNamesAnnotationProcessorTest {
                   String name = "name";
 
                   String quantity = "quantity";
+                }
+                """
+        );
+
+        Truth.assert_()
+                .about(JavaSourcesSubjectFactory.javaSources())
+                .that(List.of(input))
+                .processedWith(new GenerateFieldNamesAnnotationProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(output);
+    }
+
+    @Test
+    public void shouldProcessWithCustomGeneratedNameAndPackagePrivateVisibility() {
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
+
+                import %s;
+                import %s;
+
+                @%s(generatedName = "CustomFieldNames", visibility = GeneratedVisibility.PACKAGE_PRIVATE)
+                public class A {
+                    String myField;
+                }
+                """.formatted(
+                        GenerateFieldNames.class.getCanonicalName(),
+                        GeneratedVisibility.class.getCanonicalName(),
+                        GenerateFieldNames.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.CustomFieldNames",
+                """
+                package com.example;
+
+                import java.lang.String;
+
+                interface CustomFieldNames {
+                  String myField = "myField";
                 }
                 """
         );

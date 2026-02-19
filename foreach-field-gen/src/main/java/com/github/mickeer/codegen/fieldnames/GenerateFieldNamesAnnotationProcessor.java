@@ -22,8 +22,11 @@ public class GenerateFieldNamesAnnotationProcessor extends AbstractFieldProcesso
 
     @Override
     protected TypeSpec.Builder process(Element element, List<Element> sourceFields) {
-        TypeSpec.Builder fieldsEnumBuilder = TypeSpec.interfaceBuilder(element.getSimpleName() + "Fields")
-                .addModifiers(Modifier.PUBLIC);
+        String generatedTypeName = getGeneratedTypeName(element, element.getSimpleName() + "Fields");
+        TypeSpec.Builder fieldsEnumBuilder = TypeSpec.interfaceBuilder(generatedTypeName);
+        if (isPublicGeneratedType(element)) {
+            fieldsEnumBuilder.addModifiers(Modifier.PUBLIC);
+        }
 
         sourceFields.forEach(f -> fieldsEnumBuilder.addField(createField(f)));
 

@@ -1,5 +1,6 @@
 package com.github.mickeer.codegen.test;
 
+import com.github.mickeer.codegen.common.GeneratedVisibility;
 import com.github.mickeer.codegen.fieldenum.GenerateFieldEnum;
 import com.github.mickeer.codegen.fieldenum.GenerateFieldEnumAnnotationProcessor;
 import com.google.common.truth.Truth;
@@ -93,6 +94,58 @@ public class GenerateFieldEnumAnnotationProcessorTest {
                   private final String fieldName;
 
                   AFields(String fieldName) {
+                    this.fieldName = fieldName;
+                  }
+
+                  public String getFieldName() {
+                    return fieldName;
+                  }
+                }
+                """
+        );
+
+        Truth.assert_()
+                .about(JavaSourcesSubjectFactory.javaSources())
+                .that(List.of(input))
+                .processedWith(new GenerateFieldEnumAnnotationProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(output);
+    }
+
+    @Test
+    public void shouldProcessWithCustomGeneratedNameAndPackagePrivateVisibility() {
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
+
+                import %s;
+                import %s;
+
+                @%s(generatedName = "CustomFieldEnum", visibility = GeneratedVisibility.PACKAGE_PRIVATE)
+                public class A {
+                    String myField;
+                }
+                """.formatted(
+                        GenerateFieldEnum.class.getCanonicalName(),
+                        GeneratedVisibility.class.getCanonicalName(),
+                        GenerateFieldEnum.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.CustomFieldEnum",
+                """
+                package com.example;
+
+                import java.lang.String;
+
+                enum CustomFieldEnum {
+                  MY_FIELD("myField");
+
+                  private final String fieldName;
+
+                  CustomFieldEnum(String fieldName) {
                     this.fieldName = fieldName;
                   }
 

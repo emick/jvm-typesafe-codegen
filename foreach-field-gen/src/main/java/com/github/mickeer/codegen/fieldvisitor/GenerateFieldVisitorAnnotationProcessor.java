@@ -25,8 +25,12 @@ public class GenerateFieldVisitorAnnotationProcessor extends AbstractFieldProces
 
     @Override
     protected TypeSpec.Builder process(Element element, List<Element> sourceFields) {
-        TypeSpec.Builder fieldVisitorBuilder = TypeSpec.classBuilder(element.getSimpleName() + "FieldVisitor")
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT);
+        String generatedTypeName = getGeneratedTypeName(element, element.getSimpleName() + "FieldVisitor");
+        TypeSpec.Builder fieldVisitorBuilder = TypeSpec.classBuilder(generatedTypeName)
+                .addModifiers(Modifier.ABSTRACT);
+        if (isPublicGeneratedType(element)) {
+            fieldVisitorBuilder.addModifiers(Modifier.PUBLIC);
+        }
 
         var elementType = TypeName.get(element.asType());
 
