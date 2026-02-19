@@ -1,7 +1,6 @@
 package com.github.mickeer.codegen.fieldenum;
 
 import com.github.mickeer.codegen.common.AbstractFieldProcessor;
-import com.github.mickeer.codegen.util.SourceUtil;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
@@ -31,7 +30,7 @@ public class GenerateFieldEnumAnnotationProcessor extends AbstractFieldProcessor
         }
 
         sourceFields.forEach(f -> fieldsEnumBuilder.addEnumConstant(
-                SourceUtil.fieldNameToEnumName(f.getSimpleName()),
+                EnumUtil.fieldNameToEnumName(f.getSimpleName().toString()),
                 TypeSpec.anonymousClassBuilder("$S", getMemberName(f)).build()
         ));
 

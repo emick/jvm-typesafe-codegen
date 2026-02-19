@@ -23,7 +23,7 @@ public class FieldGenReflectionUtil {
         return doPreservingAccessible(field, () -> field.get(object));
     }
 
-    public static <T> T doPreservingAccessible(Field field, ThrowingSupplier<T> runnable) {
+    private static <T> T doPreservingAccessible(Field field, ThrowingSupplier<T> runnable) {
         boolean accessible = field.isAccessible();
 
         try {
@@ -36,7 +36,7 @@ public class FieldGenReflectionUtil {
         }
     }
 
-    public static Field getDeclaredField(Object obj, String fieldName) {
+    private static Field getDeclaredField(Object obj, String fieldName) {
         Class<?> current = obj.getClass();
 
         while (current != null) {

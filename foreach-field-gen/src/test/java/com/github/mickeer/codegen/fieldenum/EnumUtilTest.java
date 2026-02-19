@@ -1,11 +1,12 @@
-package com.github.mickeer.codegen.util;
+package com.github.mickeer.codegen.fieldenum;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class SourceUtilTest {
+public class EnumUtilTest {
 
     @ParameterizedTest
     @CsvSource(value = {
@@ -14,6 +15,6 @@ public class SourceUtilTest {
             "myAPIKey; MY_API_KEY",
     }, delimiter = ';')
     public void shouldConvertFieldNameToEnumName(String input, String result) {
-        assertEquals(result, SourceUtil.fieldNameToEnumName(input));
+        Assertions.assertEquals(result, EnumUtil.fieldNameToEnumName(input));
     }
 }
