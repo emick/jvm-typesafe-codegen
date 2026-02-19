@@ -97,7 +97,9 @@ and has known fields categorized to "stays same", "is nulled" etc. categories.
 Usage
 -----
 
-This library is not yet published to any public repository. First publish it to Maven local:
+The `demo-project` in this repository uses project dependencies and can be built directly from a fresh checkout.
+
+For usage in another Gradle project, this library is not yet published to a public repository. First publish it to Maven local:
 
 1. Clone this repository to your local machine
 2. Run `./gradlew clean publishToMavenLocal` to publish the project to Maven local repository
@@ -133,7 +135,6 @@ dependencies {
 TODO
 ----
 
-* Add a demo project
 * Add more examples and documentation
 
 Possible future improvements
@@ -149,7 +150,7 @@ Possible future improvements
 Limitations
 ===========
 
-  * Java 11+ is required
+  * Java 21+ is required
   * Only classes supported. Records, interfaces etc. could be added later.
   * GraalVM is not tested and most likely not supported for all annotations due to the usage of reflection
   

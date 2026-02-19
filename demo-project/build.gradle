@@ -1,0 +1,45 @@
+plugins {
+	id 'java'
+	id 'eclipse'
+	id 'idea'
+}
+
+group = 'com.github.mickeer.codegen.demo'
+version = '1.0'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = 21
+}
+
+repositories {
+	mavenCentral()
+}
+
+sourceSets.main.java.srcDir new File(buildDir, 'generated/sources/annotationProcessor')
+
+idea {
+	module {
+		// Marks the already(!) added srcDir as "generated"
+		generatedSourceDirs += file('build/generated/sources/annotationProcessor')
+	}
+}
+
+dependencies {
+	implementation project(":foreach-field-gen")
+
+	// Use project dependency so the demo builds from a fresh checkout
+	annotationProcessor project(":foreach-field-gen")
+
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.12.2'
+}
+
+test {
+	useJUnitPlatform()
+}
