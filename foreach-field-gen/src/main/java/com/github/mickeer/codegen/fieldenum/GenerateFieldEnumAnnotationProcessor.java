@@ -10,6 +10,7 @@ import com.squareup.javapoet.TypeSpec;
 import javax.annotation.processing.Processor;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import java.util.List;
 
 /**
@@ -28,8 +29,8 @@ public class GenerateFieldEnumAnnotationProcessor extends AbstractFieldProcessor
                 .addModifiers(Modifier.PUBLIC);
 
         sourceFields.forEach(f -> fieldsEnumBuilder.addEnumConstant(
-                SourceUtil.fieldNameToEnumName(f.getSimpleName()),
-                TypeSpec.anonymousClassBuilder("$S", f.getSimpleName().toString()).build()
+                SourceUtil.fieldNameToEnumName(asName(getMemberName(f))),
+                TypeSpec.anonymousClassBuilder("$S", getMemberName(f)).build()
         ));
 
         fieldsEnumBuilder.addField(FieldSpec.builder(String.class, "fieldName", Modifier.PRIVATE, Modifier.FINAL).build());
@@ -44,6 +45,35 @@ public class GenerateFieldEnumAnnotationProcessor extends AbstractFieldProcessor
                 .build());
 
         return fieldsEnumBuilder;
+    }
+
+    private static Name asName(String value) {
+        return new Name() {
+            @Override
+            public boolean contentEquals(CharSequence cs) {
+                return value.contentEquals(cs);
+            }
+
+            @Override
+            public int length() {
+                return value.length();
+            }
+
+            @Override
+            public char charAt(int index) {
+                return value.charAt(index);
+            }
+
+            @Override
+            public CharSequence subSequence(int start, int end) {
+                return value.subSequence(start, end);
+            }
+
+            @Override
+            public String toString() {
+                return value;
+            }
+        };
     }
 
 }

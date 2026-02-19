@@ -51,4 +51,45 @@ public class GenerateFieldNamesAnnotationProcessorTest {
                 .and()
                 .generatesSources(output);
     }
+
+    @Test
+    public void shouldProcessRecord() {
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
+
+                import %s;
+
+                @%s
+                public record A(String name, int quantity) {
+                }
+                """.formatted(
+                        GenerateFieldNames.class.getCanonicalName(),
+                        GenerateFieldNames.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.AFields",
+                """
+                package com.example;
+
+                import java.lang.String;
+
+                public interface AFields {
+                  String name = "name";
+
+                  String quantity = "quantity";
+                }
+                """
+        );
+
+        Truth.assert_()
+                .about(JavaSourcesSubjectFactory.javaSources())
+                .that(List.of(input))
+                .processedWith(new GenerateFieldNamesAnnotationProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(output);
+    }
 }

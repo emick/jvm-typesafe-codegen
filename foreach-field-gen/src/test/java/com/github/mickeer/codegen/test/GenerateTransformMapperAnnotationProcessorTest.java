@@ -70,4 +70,54 @@ public class GenerateTransformMapperAnnotationProcessorTest {
                 .and()
                 .generatesSources(output);
     }
+
+    @Test
+    public void shouldProcessRecord() {
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
+
+                import %s;
+
+                @%s
+                public record A(String name, int quantity) {
+                }
+                """.formatted(
+                        GenerateTransformMapper.class.getCanonicalName(),
+                        GenerateTransformMapper.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.AFieldMapper",
+                """
+                package com.example;
+
+                import java.lang.String;
+
+                public abstract class AFieldMapper {
+                  private A source;
+
+                  AFieldMapper(A source) {
+                    this.source = source;
+                  }
+
+                  protected abstract String mapName(A source, String sourceFieldValue);
+                  protected abstract int mapQuantity(A source, int sourceFieldValue);
+
+                  public A mapAll() {
+                    return new A(mapName(source, source.name()), mapQuantity(source, source.quantity()));
+                  }
+                }
+                """
+        );
+
+        Truth.assert_()
+                .about(JavaSourcesSubjectFactory.javaSources())
+                .that(List.of(input))
+                .processedWith(new GenerateTransformMapperAnnotationProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(output);
+    }
 }

@@ -8,6 +8,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
@@ -46,8 +47,8 @@ public abstract class AbstractFieldProcessor extends AbstractProcessor {
     }
 
     private void process(Element element) throws IOException {
-        if (element.getKind() != ElementKind.CLASS) {
-            error(element, "Only classes may be annotated with @" + annotationClass.getSimpleName());
+        if (!isSupportedSourceKind(element.getKind())) {
+            error(element, "Only classes and records may be annotated with @" + annotationClass.getSimpleName());
             return;
         }
 
@@ -57,9 +58,7 @@ public abstract class AbstractFieldProcessor extends AbstractProcessor {
             return;
         }
 
-        List<Element> sourceFields = element.getEnclosedElements().stream()
-                .filter(e -> e.getKind() == ElementKind.FIELD)
-                .collect(Collectors.toList());
+        List<Element> sourceFields = getSourceMembers(element);
 
         if (hasFieldNameConflicts(sourceFields)) {
             error(element, "Field names should not differ only by case");
@@ -77,7 +76,7 @@ public abstract class AbstractFieldProcessor extends AbstractProcessor {
 
     private boolean hasFieldNameConflicts(List<Element> sourceFields) {
         var nameSet = sourceFields.stream()
-                .map(el -> el.getSimpleName().toString().toUpperCase())
+                .map(el -> getMemberName(el).toUpperCase())
                 .collect(Collectors.toSet());
         return nameSet.size() != sourceFields.size();
     }
@@ -88,6 +87,37 @@ public abstract class AbstractFieldProcessor extends AbstractProcessor {
 
     protected static String capitalize(String string) {
         return string.substring(0, 1).toUpperCase() + string.substring(1);
+    }
+
+    protected static String getMemberName(Element element) {
+        return element.getSimpleName().toString();
+    }
+
+    protected static boolean isRecordComponentMember(Element element) {
+        return element.getKind() == ElementKind.RECORD_COMPONENT;
+    }
+
+    protected static boolean isRecordMember(Element element) {
+        Element enclosing = element.getEnclosingElement();
+        return enclosing != null && enclosing.getKind() == ElementKind.RECORD;
+    }
+
+    private static boolean isSupportedSourceKind(ElementKind kind) {
+        return kind == ElementKind.CLASS
+                || kind == ElementKind.RECORD;
+    }
+
+    private static List<Element> getSourceMembers(Element sourceType) {
+        if (sourceType.getKind() == ElementKind.RECORD) {
+            return sourceType.getEnclosedElements().stream()
+                    .filter(e -> e.getKind() == ElementKind.RECORD_COMPONENT)
+                    .collect(Collectors.toList());
+        }
+
+        return sourceType.getEnclosedElements().stream()
+                .filter(e -> e.getKind() == ElementKind.FIELD)
+                .filter(e -> !e.getModifiers().contains(Modifier.STATIC))
+                .collect(Collectors.toList());
     }
 
     protected abstract TypeSpec.Builder process(Element element, List<Element> sourceFields);

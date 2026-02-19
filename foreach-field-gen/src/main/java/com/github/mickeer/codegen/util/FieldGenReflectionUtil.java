@@ -13,14 +13,14 @@ public class FieldGenReflectionUtil {
     public static void setFieldValue(Object object, String fieldName, Object value) {
         Field field = getDeclaredField(object, fieldName);
         doPreservingAccessible(field, () -> {
-            field.set(fieldName, value);
+            field.set(object, value);
             return null;
         });
     }
 
     public static Object getFieldValue(Object object, String fieldName) {
         Field field = getDeclaredField(object, fieldName);
-        return doPreservingAccessible(field, () -> field.get(fieldName));
+        return doPreservingAccessible(field, () -> field.get(object));
     }
 
     public static <T> T doPreservingAccessible(Field field, ThrowingSupplier<T> runnable) {
@@ -29,7 +29,7 @@ public class FieldGenReflectionUtil {
         try {
             field.setAccessible(true);
             return runnable.get();
-        } catch (IllegalAccessException e) {
+        } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         } finally {
             field.setAccessible(accessible);
@@ -37,15 +37,31 @@ public class FieldGenReflectionUtil {
     }
 
     public static Field getDeclaredField(Object obj, String fieldName) {
-        try {
-            return obj.getClass().getDeclaredField(fieldName);
-        } catch (final NoSuchFieldException e) {
-            throw new RuntimeException(e);
+        Class<?> current = obj.getClass();
+
+        while (current != null) {
+            try {
+                return current.getDeclaredField(fieldName);
+            } catch (final NoSuchFieldException ignored) {
+                // Keep searching in parent types and interfaces
+            }
+
+            for (Class<?> iface : current.getInterfaces()) {
+                try {
+                    return iface.getDeclaredField(fieldName);
+                } catch (NoSuchFieldException ignored) {
+                    // Keep searching
+                }
+            }
+
+            current = current.getSuperclass();
         }
+
+        throw new RuntimeException(new NoSuchFieldException(fieldName));
     }
 
     @FunctionalInterface
     private interface ThrowingSupplier<T> {
-        T get() throws IllegalAccessException;
+        T get() throws ReflectiveOperationException;
     }
 }

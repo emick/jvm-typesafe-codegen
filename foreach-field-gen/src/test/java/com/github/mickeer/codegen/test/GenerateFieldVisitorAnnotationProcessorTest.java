@@ -70,4 +70,56 @@ public class GenerateFieldVisitorAnnotationProcessorTest {
                 .and()
                 .generatesSources(output);
     }
+
+    @Test
+    public void shouldProcessRecord() {
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
+
+                import %s;
+
+                @%s
+                public record A(String name, int quantity) {
+                }
+                """.formatted(
+                        GenerateFieldVisitor.class.getCanonicalName(),
+                        GenerateFieldVisitor.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.AFieldVisitor",
+                """
+                package com.example;
+
+                import java.lang.String;
+
+                public abstract class AFieldVisitor {
+
+                  private A instance;
+
+                  AFieldVisitor(A instance) {
+                    this.instance = instance;
+                  }
+
+                  protected abstract void visitName(String value);
+                  protected abstract void visitQuantity(int value);
+
+                  public void visitAll() {
+                    visitName(instance.name());
+                    visitQuantity(instance.quantity());
+                  }
+                }
+                """
+        );
+
+        Truth.assert_()
+                .about(JavaSourcesSubjectFactory.javaSources())
+                .that(List.of(input))
+                .processedWith(new GenerateFieldVisitorAnnotationProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(output);
+    }
 }

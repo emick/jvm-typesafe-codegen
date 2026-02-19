@@ -3,7 +3,6 @@ package com.github.mickeer.codegen.fieldvisitor;
 import com.github.mickeer.codegen.common.AbstractFieldProcessor;
 import com.github.mickeer.codegen.util.FieldGenReflectionUtil;
 import com.google.auto.service.AutoService;
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
@@ -49,10 +48,20 @@ public class GenerateFieldVisitorAnnotationProcessor extends AbstractFieldProces
         var method = MethodSpec.methodBuilder("visitAll")
                 .addModifiers(Modifier.PUBLIC);
 
-        fields.forEach(f -> method.addStatement(getVisitorMethodName(f) + "(" +
-                "($T)" +
-                FieldGenReflectionUtil.class.getCanonicalName() + ".getFieldValue(instance, \"" + f.getSimpleName() + "\")" +
-                ")", ClassName.get(f.asType())));
+        fields.forEach(f -> {
+            if (isRecordComponentMember(f) || isRecordMember(f)) {
+                method.addStatement("$L($L)",
+                        getVisitorMethodName(f),
+                        getSourceValueExpression("instance", f));
+                return;
+            }
+
+            method.addStatement("$L(($T)$L.getFieldValue(instance, $S))",
+                    getVisitorMethodName(f),
+                    TypeName.get(f.asType()),
+                    FieldGenReflectionUtil.class.getCanonicalName(),
+                    getMemberName(f));
+        });
 
         return method.build();
     }
@@ -66,8 +75,12 @@ public class GenerateFieldVisitorAnnotationProcessor extends AbstractFieldProces
     }
 
     private static String getVisitorMethodName(Element element) {
-        String fieldName = element.getSimpleName().toString();
+        String fieldName = getMemberName(element);
         String capitalizedName = capitalize(fieldName);
         return "visit" + capitalizedName;
+    }
+
+    private static String getSourceValueExpression(String instanceName, Element member) {
+        return instanceName + "." + member.getSimpleName() + "()";
     }
 }

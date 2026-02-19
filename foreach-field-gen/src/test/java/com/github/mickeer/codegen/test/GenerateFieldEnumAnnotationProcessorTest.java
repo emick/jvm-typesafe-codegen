@@ -61,4 +61,54 @@ public class GenerateFieldEnumAnnotationProcessorTest {
                 .and()
                 .generatesSources(output);
     }
+
+    @Test
+    public void shouldProcessRecord() {
+        JavaFileObject input = JavaFileObjects.forSourceString(
+                "com.example.A",
+                """
+                package com.example;
+
+                import %s;
+
+                @%s
+                public record A(String name, int quantity) {
+                }
+                """.formatted(
+                        GenerateFieldEnum.class.getCanonicalName(),
+                        GenerateFieldEnum.class.getSimpleName())
+        );
+
+        JavaFileObject output = JavaFileObjects.forSourceString(
+                "com.example.AFields",
+                """
+                package com.example;
+
+                import java.lang.String;
+
+                public enum AFields {
+                  NAME("name"),
+                  QUANTITY("quantity");
+
+                  private final String fieldName;
+
+                  AFields(String fieldName) {
+                    this.fieldName = fieldName;
+                  }
+
+                  public String getFieldName() {
+                    return fieldName;
+                  }
+                }
+                """
+        );
+
+        Truth.assert_()
+                .about(JavaSourcesSubjectFactory.javaSources())
+                .that(List.of(input))
+                .processedWith(new GenerateFieldEnumAnnotationProcessor())
+                .compilesWithoutError()
+                .and()
+                .generatesSources(output);
+    }
 }

@@ -31,7 +31,7 @@ public class GenerateFieldNamesAnnotationProcessor extends AbstractFieldProcesso
     }
 
     private FieldSpec createField(Element f) {
-        String fieldName = f.getSimpleName().toString();
+        String fieldName = getMemberName(f);
         return FieldSpec.builder(String.class, fieldName, Modifier.PUBLIC, Modifier.STATIC, Modifier.FINAL)
                 .initializer("$S", fieldName)
                 .build();

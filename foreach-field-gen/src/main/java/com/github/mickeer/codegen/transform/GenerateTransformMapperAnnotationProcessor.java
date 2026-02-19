@@ -12,9 +12,11 @@ import com.squareup.javapoet.TypeSpec;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Annotation processor for {@link GenerateTransformMapper}.
@@ -39,8 +41,13 @@ public class GenerateTransformMapperAnnotationProcessor extends AbstractFieldPro
                 .addStatement("this.source = source")
                 .build());
 
-        sourceFields.forEach(f -> mapperBuilder.addMethod(createFieldMappingMethod(elementType, f)));
-        mapperBuilder.addMethod(createMapAllToMethod(elementType, sourceFields));
+        if (element.getKind() == ElementKind.RECORD) {
+            sourceFields.forEach(f -> mapperBuilder.addMethod(createRecordFieldMappingMethod(elementType, f)));
+            mapperBuilder.addMethod(createRecordMapAllMethod(elementType, sourceFields));
+        } else {
+            sourceFields.forEach(f -> mapperBuilder.addMethod(createFieldMappingMethod(elementType, f)));
+            mapperBuilder.addMethod(createMapAllToMethod(elementType, sourceFields));
+        }
 
         return mapperBuilder;
     }
@@ -50,32 +57,84 @@ public class GenerateTransformMapperAnnotationProcessor extends AbstractFieldPro
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ParameterSpec.builder(elementType, "target").build());
 
-        sourceFields.forEach(f -> method.addStatement(getSettingMethodName(f) + "(" +
-                "source, " +
-                "($T)" +
-                FieldGenReflectionUtil.class.getCanonicalName() + ".getFieldValue(source, \"" + f.getSimpleName() + "\"), " +
-                "value -> " + FieldGenReflectionUtil.class.getCanonicalName() + ".setFieldValue(target, \"" + f.getSimpleName() + "\", value)" +
-                ")", ClassName.get(f.asType())));
+        sourceFields.forEach(f -> {
+            if (isRecordComponentMember(f) || isRecordMember(f)) {
+                method.addStatement("$L(source, $L, value -> $L)",
+                        getSettingMethodName(f),
+                        getSourceValueExpression("source", f),
+                        getTargetSettingExpression("target", f));
+                return;
+            }
+
+            method.addStatement("$L(source, ($T)$L.getFieldValue(source, $S), value -> $L.setFieldValue(target, $S, value))",
+                    getSettingMethodName(f),
+                    TypeName.get(f.asType()),
+                    FieldGenReflectionUtil.class.getCanonicalName(),
+                    getMemberName(f),
+                    FieldGenReflectionUtil.class.getCanonicalName(),
+                    getMemberName(f));
+        });
 
         return method.build();
 
     }
 
+    private static MethodSpec createRecordMapAllMethod(TypeName elementType, List<Element> sourceFields) {
+        var method = MethodSpec.methodBuilder("mapAll")
+                .addModifiers(Modifier.PUBLIC)
+                .returns(elementType);
+
+        String constructorArgs = sourceFields.stream()
+                .map(f -> getRecordMappingMethodName(f) + "(source, " + getSourceValueExpression("source", f) + ")")
+                .collect(Collectors.joining(", "));
+
+        method.addStatement("return new $T($L)", elementType, constructorArgs);
+        return method.build();
+    }
+
     private MethodSpec createFieldMappingMethod(TypeName elementType, Element field) {
-        ParameterizedTypeName setterType = ParameterizedTypeName.get(ClassName.get(Consumer.class), TypeName.get(field.asType()));
+        TypeName memberType = TypeName.get(field.asType());
+        ParameterizedTypeName setterType = ParameterizedTypeName.get(ClassName.get(Consumer.class), memberType.box());
 
         return MethodSpec.methodBuilder(getSettingMethodName(field))
                 .addModifiers(Modifier.ABSTRACT, Modifier.PROTECTED)
                 .addParameter(elementType, "source")
-                .addParameter(ParameterSpec.builder(TypeName.get(field.asType()), "sourceFieldValue")
+                .addParameter(ParameterSpec.builder(memberType, "sourceFieldValue")
                         .build())
                 .addParameter(ParameterSpec.builder(setterType, "setter").build())
                 .build();
     }
 
+    private MethodSpec createRecordFieldMappingMethod(TypeName elementType, Element field) {
+        TypeName memberType = TypeName.get(field.asType());
+
+        return MethodSpec.methodBuilder(getRecordMappingMethodName(field))
+                .addModifiers(Modifier.ABSTRACT, Modifier.PROTECTED)
+                .returns(memberType)
+                .addParameter(elementType, "source")
+                .addParameter(ParameterSpec.builder(memberType, "sourceFieldValue")
+                        .build())
+                .build();
+    }
+
     private static String getSettingMethodName(Element element) {
-        String fieldName = element.getSimpleName().toString();
+        String fieldName = getMemberName(element);
         String capitalizedName = capitalize(fieldName);
         return "set" + capitalizedName;
+    }
+
+    private static String getRecordMappingMethodName(Element element) {
+        String fieldName = getMemberName(element);
+        String capitalizedName = capitalize(fieldName);
+        return "map" + capitalizedName;
+    }
+
+    private static String getSourceValueExpression(String sourceName, Element member) {
+        return sourceName + "." + member.getSimpleName() + "()";
+    }
+
+    private static String getTargetSettingExpression(String targetName, Element member) {
+        return FieldGenReflectionUtil.class.getCanonicalName()
+                + ".setFieldValue(" + targetName + ", \"" + getMemberName(member) + "\", value)";
     }
 }
