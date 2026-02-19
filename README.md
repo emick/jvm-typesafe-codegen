@@ -240,14 +240,14 @@ Possible future improvements
   * Configurable name and postfix of generated classes
   * Configurable visibility of generated classes
   * FieldVisitor annotation could have options to generate `fieldName` and `fieldType` parameters in visitor methods
-  * Investigate GraalVM support
+  * Investigate GraalVM native build support
   
 Limitations
 ===========
 
   * Java 21+ is required
   * Only type members are supported. Inheritance hierarchy traversal is not supported.
-  * GraalVM is not tested and most likely not supported for all annotations due to the usage of reflection
+  * GraalVM native build is not tested and most likely not supported for all annotations due to the usage of reflection
   
 Links
 =====
