@@ -156,6 +156,7 @@ public class ReturnShipmentMapper extends ShipmentFieldMapper {
 }
 
 // Usage
+Shipment target = new Shipment();
 new ReturnShipmentMapper(source).mapAllTo(target);
 ```
 
@@ -199,9 +200,7 @@ and has known fields categorized to "stays same", "is nulled", etc. categories.
 Usage
 -----
 
-The `demo-project` in this repository uses project dependencies and can be built directly from a fresh checkout.
-
-For usage in another Gradle project, this library is not yet published to a public repository. First publish it to Maven local:
+For usage in another Gradle project, this library is not yet published to a public repository. First, publish it to Maven local:
 
 1. Clone this repository to your local machine
 2. Run `./gradlew clean publishToMavenLocal` to publish the project to Maven local repository
